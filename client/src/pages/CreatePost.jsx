@@ -6,7 +6,6 @@ import { useSelector } from "react-redux";
 import { useAuth } from '@clerk/clerk-react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
-import { filterContent } from '../utils/contentFilter';
 
 const CreatePost = () => {
 
@@ -23,15 +22,6 @@ const CreatePost = () => {
  const handleSubmit = async () => {
   if(!images.length && !content){
     return toast.error('Please add at least one image or text')
-  }
-
-  // Client-side content validation
-  if (content) {
-    const filterResult = filterContent(content);
-    if (!filterResult.allowed) {
-      setValidationError(filterResult.message);
-      return toast.error(filterResult.message);
-    }
   }
 
   // Clear any previous validation errors
@@ -98,14 +88,7 @@ const CreatePost = () => {
               onInput={() => setValidationError('')} // Clear validation error on input
             />
 
-            {/* Validation Error Display */}
-            {validationError && (
-              <div className='flex items-center gap-2 mt-2 p-3 bg-red-50 border border-red-200 rounded-md'>
-                <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0'/>
-                <p className='text-sm text-red-700'>{validationError}</p>
-              </div>
-            )}
-
+            
              {/* Images */}
              {
               images.length > 0 && <div className='flex flex-wrap gap-2 mt-4'>
