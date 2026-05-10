@@ -225,13 +225,22 @@ export const getUserConnections = async (req, res) => {
         const {userId} = req.auth()
         const user = await User.findById(userId).populate('connections followers following')
 
-        const connections = user.connections
-        const followers = user.followers
-        const following = user.following
+        // Remove duplicates by using Set to filter unique user IDs
+        const uniqueConnections = user.connections.filter((user, index, self) => 
+            index === self.findIndex((u) => u._id.toString() === user._id.toString())
+        )
+        
+        const uniqueFollowers = user.followers.filter((user, index, self) => 
+            index === self.findIndex((u) => u._id.toString() === user._id.toString())
+        )
+        
+        const uniqueFollowing = user.following.filter((user, index, self) => 
+            index === self.findIndex((u) => u._id.toString() === user._id.toString())
+        )
 
         const pendingConnections = (await Connection.find({to_user_id: userId, status: 'pending'}).populate('from_user_id')).map(connection=>connection.from_user_id)
 
-        res.json({success: true, connections, followers, following, pendingConnections})
+        res.json({success: true, connections: uniqueConnections, followers: uniqueFollowers, following: uniqueFollowing, pendingConnections})
 
     } catch (error) {
         console.log(error);
@@ -252,11 +261,17 @@ export const acceptConnectionRequest = async (req, res) => {
         }
 
         const user = await User.findById(userId);
-        user.connections.push(id);
+        // Only add to connections if not already present
+        if (!user.connections.includes(id)) {
+            user.connections.push(id);
+        }
         await user.save()
 
         const toUser = await User.findById(id);
-        toUser.connections.push(userId);
+        // Only add to connections if not already present
+        if (!toUser.connections.includes(userId)) {
+            toUser.connections.push(userId);
+        }
         await toUser.save()
 
         connection.status = 'accepted';
