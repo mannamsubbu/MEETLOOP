@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { dummyUserData } from '../assets/assets'
-import { Image, X } from 'lucide-react'
+import { Image, X, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSelector } from "react-redux";
 import { useAuth } from '@clerk/clerk-react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { filterContent } from '../utils/contentFilter';
 
 const CreatePost = () => {
 
@@ -13,6 +14,7 @@ const CreatePost = () => {
   const [content, setContent] = useState('')
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(false)
+  const [validationError, setValidationError] = useState('')
 
   const user = useSelector((state)=>state.user.value)
 
@@ -22,7 +24,19 @@ const CreatePost = () => {
   if(!images.length && !content){
     return toast.error('Please add at least one image or text')
   }
-  setLoading(true)
+
+  // Client-side content validation
+  if (content) {
+    const filterResult = filterContent(content);
+    if (!filterResult.allowed) {
+      setValidationError(filterResult.message);
+      return toast.error(filterResult.message);
+    }
+  }
+
+  // Clear any previous validation errors
+  setValidationError('');
+  setLoading(true);
 
   const postType = images.length && content ? 'text_with_image' : images.length ? 'image' : 'text'
 
@@ -39,8 +53,14 @@ const CreatePost = () => {
     if (data.success) {
       navigate('/')
     }else{
-      console.log(data.message)
-      throw new Error(data.message)
+      // Handle server-side validation errors
+      if (data.violation) {
+        setValidationError(data.message);
+        throw new Error(data.message);
+      } else {
+        console.log(data.message)
+        throw new Error(data.message);
+      }
     }
   } catch (error) {
     console.log(error.message)
@@ -70,7 +90,21 @@ const CreatePost = () => {
             </div>
 
             {/* Text Area */}
-            <textarea className='w-full resize-none max-h-20 mt-4 text-sm outline-none placeholder-gray-400' placeholder="What's happening?" onChange={(e)=>setContent(e.target.value)} value={content}/>
+            <textarea 
+              className='w-full resize-none max-h-20 mt-4 text-sm outline-none placeholder-gray-400' 
+              placeholder="What's happening?" 
+              onChange={(e)=>setContent(e.target.value)} 
+              value={content}
+              onInput={() => setValidationError('')} // Clear validation error on input
+            />
+
+            {/* Validation Error Display */}
+            {validationError && (
+              <div className='flex items-center gap-2 mt-2 p-3 bg-red-50 border border-red-200 rounded-md'>
+                <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0'/>
+                <p className='text-sm text-red-700'>{validationError}</p>
+              </div>
+            )}
 
              {/* Images */}
              {

@@ -2,6 +2,7 @@ import fs from "fs";
 import imagekit from "../configs/imageKit.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
+import { filterContent } from "../utils/contentFilter.js";
 
 // Add Post
 export const addPost = async (req, res) => {
@@ -9,6 +10,22 @@ export const addPost = async (req, res) => {
         const { userId } = req.auth();
         const { content, post_type } = req.body;
         const images = req.files
+
+        // Content moderation - check for inappropriate content
+        if (content) {
+            const filterResult = filterContent(content);
+            if (!filterResult.allowed) {
+                // Log the violation for monitoring
+                console.log(`Content violation by user ${userId}: ${filterResult.reasons.join(', ')}`);
+                
+                return res.json({ 
+                    success: false, 
+                    message: filterResult.message,
+                    violation: true,
+                    reasons: filterResult.reasons
+                });
+            }
+        }
 
         let image_urls = []
 
