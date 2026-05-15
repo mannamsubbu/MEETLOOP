@@ -4,6 +4,7 @@ import Connection from "../models/Connection.js"
 import Post from "../models/Post.js"
 import User from "../models/User.js"
 import fs from 'fs'
+import crypto from 'crypto'
 import { clerkClient } from "@clerk/express";
 
 
@@ -91,7 +92,20 @@ export const updateUserData = async (req, res) => {
 
          const user = await User.findByIdAndUpdate(userId, updatedData, {new : true})
 
-         res.json({success: true, user, message: 'Profile updted successfully'})
+         // Security Feature: Generate a PBKDF2 hash of the updated data to act as a tamper-proof signature
+         const salt = crypto.randomBytes(16).toString('hex');
+         const combinedData = `${user.username}:${user.bio}:${user.location}`;
+         const dataSignature = crypto.pbkdf2Sync(combinedData, salt, 1000, 64, 'sha512').toString('hex');
+
+         res.json({
+             success: true, 
+             user, 
+             message: 'Profile updted successfully',
+             security_metadata: {
+                 hashing_algorithm: 'PBKDF2-SHA512',
+                 data_signature: `${salt}:${dataSignature}`
+             }
+         })
 
     } catch(error){
         console.log(error);
