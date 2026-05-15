@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { useAuth } from '@clerk/clerk-react'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
+import DOMPurify from 'dompurify'
 
 const PostCard = ({post}) => {
 
@@ -53,7 +54,7 @@ const PostCard = ({post}) => {
             </div>
         </div>
          {/* Content */}
-         {post.content && <div className='text-gray-800 text-sm whitespace-pre-line' dangerouslySetInnerHTML={{__html: postWithHashtags}}/>}
+         {post.content && <div className='text-gray-800 text-sm whitespace-pre-line' dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(postWithHashtags)}}/>}
 
        {/* Images */}
        <div className='grid grid-cols-2 gap-2'>

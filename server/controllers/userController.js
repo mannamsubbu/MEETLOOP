@@ -26,14 +26,14 @@ export const getUserData = async (req, res) => {
 export const updateUserData = async (req, res) => {
     try{
         const { userId } = req.auth()
-        const {username, bio, location, full_name } = req.body;
+        let {username, bio, location, full_name } = req.body;
 
         const tempUser = await User.findById(userId)
         
         !username && (username = tempUser.username)
 
         if(tempUser.username !== username){
-            const user = User.findOne({username})
+            const user = await User.findOne({username: String(username)})
             if(user){
                 //we will not change user name if it is already taken
                 username = tempUser.username
@@ -114,7 +114,7 @@ export const discoverUsers = async (req, res) => {
                     {location: new RegExp(input, 'i')},
                 ]
             }
-        )
+        ).select('-email -role')
         const filteredUsers = allUsers.filter(user=> user._id !== userId);
 
         res.json({success: true, users: filteredUsers})
@@ -223,7 +223,7 @@ export const sendConnectionRequest = async (req, res) => {
 export const getUserConnections = async (req, res) => {
     try {
         const {userId} = req.auth()
-        const user = await User.findById(userId).populate('connections followers following')
+        const user = await User.findById(userId).populate('connections followers following', '-email -role')
 
         // Remove duplicates by using Set to filter unique user IDs
         const uniqueConnections = user.connections.filter((user, index, self) => 
@@ -238,7 +238,7 @@ export const getUserConnections = async (req, res) => {
             index === self.findIndex((u) => u._id.toString() === user._id.toString())
         )
 
-        const pendingConnections = (await Connection.find({to_user_id: userId, status: 'pending'}).populate('from_user_id')).map(connection=>connection.from_user_id)
+        const pendingConnections = (await Connection.find({to_user_id: userId, status: 'pending'}).populate('from_user_id', '-email -role')).map(connection=>connection.from_user_id)
 
         res.json({success: true, connections: uniqueConnections, followers: uniqueFollowers, following: uniqueFollowing, pendingConnections})
 

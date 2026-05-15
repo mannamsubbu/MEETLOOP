@@ -1,6 +1,6 @@
 import express from 'express';
 import { acceptConnectionRequest, discoverUsers, followUser, getUserConnections, getUserData, getUserProfiles, sendConnectionRequest, unfollowUser, updateUserData } from '../controllers/userController.js';
-import { protect } from '../middlewares/auth.js';
+import { protect, authorizeRoles } from '../middlewares/auth.js';
 import { upload } from '../configs/multer.js';
 import { getUserRecentMessages } from '../controllers/messageController.js';
 
@@ -16,5 +16,10 @@ userRouter.post('/accept', protect, acceptConnectionRequest)
 userRouter.get('/connections', protect, getUserConnections)
 userRouter.post('/profiles', getUserProfiles)
 userRouter.get('/recent-messages', protect, getUserRecentMessages)
+
+// Example admin-only route
+userRouter.get('/admin/stats', protect, authorizeRoles('admin'), (req, res) => {
+    res.json({ success: true, message: 'Admin stats accessed securely' });
+});
 
 export default userRouter

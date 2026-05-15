@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import 'dotenv/config';
 import connectDB from './configs/db.js';
 import {inngest, functions} from './inngest/index.js'
@@ -14,8 +15,12 @@ const app = express();
 
 await connectDB();
 
+app.use(helmet());
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+}));
 app.use(clerkMiddleware());
 
 app.get('/', (req, res)=> res.send('Server is running'))
