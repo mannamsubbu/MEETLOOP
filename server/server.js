@@ -18,7 +18,11 @@ await connectDB();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: [
+        process.env.CLIENT_URL,
+        'http://localhost:5173',
+        'https://meetloop-xlpl.vercel.app'
+    ].filter(Boolean),
     credentials: true
 }));
 app.use(clerkMiddleware());
